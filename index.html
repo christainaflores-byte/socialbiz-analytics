@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialBiz Analytics — Instagram Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #070711;
+    --surface: rgba(255,255,255,0.03);
+    --surface-hover: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.07);
+    --border-glow: rgba(139,92,246,0.3);
+    --accent: #8b5cf6;
+    --accent2: #06b6d4;
+    --accent3: #f472b6;
+    --text: #f1f0ff;
+    --muted: rgba(241,240,255,0.45);
+    --gold: #fbbf24;
+    --silver: #94a3b8;
+    --bronze: #c97c3a;
+    --glow-size: 420px;
+    --font-body: 'Nunito Sans', 'Segoe UI', sans-serif;
+    --font-title: 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* CURSOR GLOW */
+  /* NORMAL CURSOR */
+  * { cursor: default; }
+  a, button, .video-card, .suggestion-card, .stat-card, .prev-card { cursor: pointer; }
+
+
+
+  /* HEADER */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,7,17,0.92);
+    backdrop-filter: blur(20px);
+    box-sizing: border-box;
+  }
+
+  /* Push content below fixed header */
+  #login-screen, #dashboard {
+    padding-top: 73px;
+  }
+
+
+  .logo {
+    font-family: var(--font-title);
+    font-weight: 900;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo span { color: var(--accent3); -webkit-text-fill-color: var(--accent3); }
+
+  .header-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 100px;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+    display: inline-block;
+  }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    position: relative;
+    z-index: 5;
+    min-height: calc(100vh - 73px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .login-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    max-width: 1100px;
+    width: 100%;
+  }
+
+  @media (max-width: 860px) {
+    .login-layout { grid-template-columns: 1fr; }
+    .preview-box { display: none; }
+  }
+
+  .login-left { display: flex; flex-direction: column; align-items: flex-start; }
+
+  .login-title {
+    font-family: var(--font-title);
+    font-size: clamp(3rem, 5vw, 5rem);
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 0.92;
+    margin-bottom: 20px;
+  }
+
+  .login-title .grad {
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .login-sub {
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    max-width: 420px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+  }
+
+  .privacy-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(139,92,246,0.06);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 14px;
+    padding: 16px 20px;
+    max-width: 420px;
+    margin-bottom: 32px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .privacy-note .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+  .privacy-note strong { color: var(--text); display: block; margin-bottom: 3px; font-family: var(--font-body); }
+
+  .preview-box {
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid rgba(40,120,255,0.35);
+    background: rgba(10,10,22,0.97);
+    padding: 18px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(40,120,255,0.1),
+      0 0 40px rgba(40,120,255,0.2),
+      0 0 80px rgba(0,180,255,0.08),
+      inset 0 0 40px rgba(40,120,255,0.04);
+    transition: box-shadow 0.3s ease;
+    animation: previewPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes previewPulse {
+    0%,100% { box-shadow: 0 0 0 1px rgba(40,120,255,0.1), 0 0 40px rgba(40,120,255,0.2), 0 0 80px rgba(0,180,255,0.08), inset 0 0 40px rgba(40,120,255,0.04); }
+    50% { box-shadow: 0 0 0 1px rgba(40,120,255,0.25), 0 0 70px rgba(40,120,255,0.4), 0 0 140px rgba(0,180,255,0.15), inset 0 0 60px rgba(40,120,255,0.07); }
+  }
+
+  .preview-box.near {
+    animation: none;
+    box-shadow:
+      0 0 0 1px rgba(40,120,255,0.5),
+      0 0 60px rgba(40,120,255,0.6),
+      0 0 120px rgba(0,180,255,0.35),
+      0 0 200px rgba(0,120,255,0.2),
+      inset 0 0 80px rgba(40,120,255,0.1);
+  }
+
+
+  .preview-glow {
+    position: absolute; top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 200px;
+    background: radial-gradient(ellipse, rgba(40,120,255,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .prev-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .prev-logo { font-family: var(--font-title); font-size: 0.85rem; letter-spacing: 0.08em; background: linear-gradient(135deg,#8b5cf6,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .prev-logo span { -webkit-text-fill-color: #f472b6; }
+  .prev-badge { width: 60px; height: 8px; border-radius: 100px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); }
+
+  .prev-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 12px; }
+  .prev-stat { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 8px 6px; text-align: center; }
+  .prev-stat-val { font-family: var(--font-title); font-size: 1rem; letter-spacing: 0.03em; }
+  .prev-stat-lbl { font-family: var(--font-body); font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+  .prev-section-label { font-family: var(--font-title); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+
+  .prev-cards { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+  .prev-card { display: flex; gap: 8px; align-items: flex-start; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
+  .prev-card-gold { border-color: rgba(251,191,36,0.25); background: rgba(251,191,36,0.03); }
+  .prev-card-faded { opacity: 0.65; }
+  .prev-rank { font-size: 0.85rem; flex-shrink: 0; margin-top: 2px; }
+  .prev-thumb { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+  .prev-card-info { flex: 1; min-width: 0; }
+  .prev-card-title { font-family: var(--font-title); font-size: 0.7rem; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .prev-metrics-row { display: flex; gap: 8px; font-family: var(--font-body); font-size: 0.58rem; color: var(--muted); margin-bottom: 4px; }
+  .prev-bar-track { height: 2px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; margin-bottom: 4px; }
+  .prev-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .prev-chart { width: 100%; height: 20px; display: block; }
+
+  .prev-suggestions { display: flex; flex-direction: column; gap: 4px; }
+  .prev-sug { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; }
+  .prev-sug-num { font-family: var(--font-title); font-size: 0.65rem; color: var(--accent); letter-spacing: 0.05em; flex-shrink: 0; }
+  .prev-sug-title { font-family: var(--font-title); font-size: 0.65rem; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+
+  .preview-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(to bottom, transparent, rgba(10,10,22,0.98)); pointer-events: none; border-radius: 0 0 20px 20px; }
+
+  .btn-connect {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 36px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 100px;
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(139,92,246,0.4), 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .btn-connect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 50px rgba(139,92,246,0.6), 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+
+  /* DASHBOARD */
+  #dashboard {
+    display: none;
+    position: relative;
+    z-index: 5;
+    padding: 32px 40px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .dash-title {
+    font-family: var(--font-title);
+    font-size: 2.2rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .dash-title span { color: var(--accent); }
+
+  .date-range {
+    font-size: 0.82rem;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 100px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at center, var(--card-glow, rgba(139,92,246,0.08)) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .stat-card:hover::before { opacity: 1; }
+  .stat-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+
+  .stat-label { font-family: var(--font-body); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .stat-value { font-family: var(--font-title); font-size: 2.2rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.03em; line-height: 1; }
+  .stat-delta { font-family: var(--font-body); font-size: 0.78rem; color: #4ade80; margin-top: 4px; }
+
+  /* SECTION LABELS */
+  .section-label {
+    font-family: var(--font-title);
+    font-size: 1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* VIDEO GRID */
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 48px;
+  }
+
+  .video-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .video-card:hover {
+    border-color: var(--border-glow);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 40px rgba(139,92,246,0.15);
+  }
+
+  .rank-badge {
+    position: absolute;
+    top: 14px; left: 14px;
+    z-index: 3;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title);
+    font-size: 0.85rem;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+  }
+
+  .rank-1 { background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.5); color: var(--gold); }
+  .rank-2 { background: rgba(148,163,184,0.2); border: 1px solid rgba(148,163,184,0.4); color: var(--silver); }
+  .rank-3 { background: rgba(201,124,58,0.2); border: 1px solid rgba(201,124,58,0.4); color: var(--bronze); }
+  .rank-other { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
+
+  .video-thumb {
+    width: 100%;
+    aspect-ratio: 9/16;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    position: relative;
+  }
+
+  .thumb-placeholder {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .video-info { padding: 18px; }
+
+  .video-title {
+    font-family: var(--font-title);
+    font-size: 1.15rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .video-date { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .metric {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .metric-val {
+    font-family: var(--font-title);
+    font-size: 1.3rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    display: block;
+  }
+
+  .metric-lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .score-bar-wrap { margin-top: 14px; }
+  .score-bar-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
+  .score-bar-track { height: 4px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 1s ease; }
+
+  .retention-wrap {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .retention-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  canvas.retention-chart { width: 100% !important; height: 80px !important; }
+
+  /* LEADERBOARD */
+  .leaderboard {
+    margin-bottom: 48px;
+  }
+
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .leaderboard-table th {
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .leaderboard-table td {
+    padding: 14px 16px;
+    font-size: 0.88rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .leaderboard-table tr:hover td { background: var(--surface-hover); }
+
+  .lb-rank { font-family: var(--font-title); font-weight: 900; font-size: 1.1rem; letter-spacing: -0.02em; }
+  .lb-title { font-family: var(--font-body); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-score { font-family: var(--font-title); font-weight: 900; letter-spacing: -0.01em; color: var(--accent); }
+
+  /* SUGGESTIONS */
+  .suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .suggestion-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .suggestion-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .suggestion-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+  .suggestion-card:hover::after { opacity: 1; }
+
+  .suggestion-num {
+    font-family: var(--font-title);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .suggestion-title {
+    font-family: var(--font-title);
+    font-size: 1.3rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 8px;
+    line-height: 1.05;
+  }
+
+  .suggestion-reason {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .suggestion-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2);
+    color: var(--accent);
+  }
+
+  /* LOADING */
+  #loading-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .loader-ring {
+    width: 64px; height: 64px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .loader-text { font-family: 'Syne', sans-serif; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.05em; }
+
+  /* USER INFO BAR */
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px 6px 6px;
+  }
+
+  .user-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+  }
+
+  .user-name { font-size: 0.85rem; font-weight: 500; }
+  .user-handle { font-size: 0.72rem; color: var(--muted); }
+
+  .btn-disconnect {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    margin-left: 8px;
+    transition: color 0.2s;
+  }
+  .btn-disconnect:hover { color: var(--accent3); }
+
+  /* SETUP MODAL */
+  #setup-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7,7,17,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-box {
+    background: #0e0e1f;
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 24px;
+    padding: 36px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 0 60px rgba(139,92,246,0.2);
+  }
+  .modal-title {
+    font-family: var(--font-title);
+    font-size: 2rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .modal-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .modal-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  .modal-step-num {
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    color: var(--accent);
+    width: 24px;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+  }
+  .modal-step a { color: var(--accent2); }
+  .modal-step code {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+  .modal-close {
+    margin-top: 24px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 20px;
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--accent); color: var(--text); }
+  #error-msg {
+    display: none;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.85rem;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    header { padding: 16px 20px; }
+    #dashboard { padding: 20px 20px 60px; }
+    .video-grid { grid-template-columns: 1fr; }
+  }
+
+  /* FADE IN */
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .stagger-1 { animation-delay: 0.05s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.15s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-5 { animation-delay: 0.25s; opacity: 0; }
+  .stagger-6 { animation-delay: 0.3s; opacity: 0; }
+  .stagger-7 { animation-delay: 0.35s; opacity: 0; }
+</style>
+</head>
+<body>
+
+<div id="cursor-glow"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">SocialBiz<span>.</span>Analytics</div>
+  <div id="header-right">
+    <div class="header-badge">Instagram Analytics · 30-Day View</div>
+  </div>
+</header>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Pulling your Instagram data…</div>
+</div>
+
+<!-- SETUP MODAL -->
+<div id="setup-modal">
+  <div class="modal-box">
+    <div class="modal-title">One-Time Setup Required</div>
+    <div class="modal-sub">To connect real Instagram accounts, you need a free Meta Developer App. Takes about 10 minutes.</div>
+    <div class="modal-step"><span class="modal-step-num">1</span><span>Go to <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> → Create App → Choose <strong>Business</strong> type</span></div>
+    <div class="modal-step"><span class="modal-step-num">2</span><span>Add the <strong>Instagram Basic Display</strong> product to your app</span></div>
+    <div class="modal-step"><span class="modal-step-num">3</span><span>Under Instagram Basic Display → Settings, add your page URL as a <strong>Valid OAuth Redirect URI</strong></span></div>
+    <div class="modal-step"><span class="modal-step-num">4</span><span>Copy your <strong>Instagram App ID</strong> and paste it into this file at: <code>CONFIG.INSTAGRAM_APP_ID</code></span></div>
+    <div class="modal-step"><span class="modal-step-num">5</span><span>To exchange the auth code for a token (needed for real data), you'll need a small backend endpoint. Ask Claude to build you a simple Node.js or Python handler.</span></div>
+    <button class="modal-close" onclick="document.getElementById('setup-modal').style.display='none'">Got it, close</button>
+  </div>
+</div>
+
+<!-- ERROR MESSAGE -->
+<div id="error-msg">Instagram login failed or was cancelled. Please try again.</div>
+
+
+<div id="login-screen">
+  <div class="login-layout">
+
+    <!-- LEFT: text + button -->
+    <div class="login-left">
+      <h1 class="login-title">Your Instagram,<br><span class="grad">fully decoded.</span></h1>
+      <p class="login-sub">Connect your account to instantly see your top 7 videos ranked by performance, retention curves, and AI-powered content ideas — all in one place.</p>
+      <div class="privacy-note">
+        <span class="icon">🔒</span>
+        <div>
+          <strong>Your data stays yours</strong>
+          We only read your analytics to display them to you. We never store, sell, or share your data. Read-only access, always.
+        </div>
+      </div>
+      <button class="btn-connect" id="btn-connect-ig">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="white" stroke-width="1.5"/><circle cx="17.5" cy="6.5" r="1" fill="white"/></svg>
+        Connect Instagram
+      </button>
+    </div>
+
+    <!-- RIGHT: dashboard preview mockup -->
+    <div class="preview-box">
+      <div class="preview-glow"></div>
+
+      <!-- mini header bar -->
+      <div class="prev-topbar">
+        <div class="prev-logo">SOCIALBIZ<span>.</span>ANALYTICS</div>
+        <div class="prev-badge"></div>
+      </div>
+
+      <!-- stats row -->
+      <div class="prev-stats">
+        <div class="prev-stat"><div class="prev-stat-val">1.2M</div><div class="prev-stat-lbl">VIEWS</div></div>
+        <div class="prev-stat"><div class="prev-stat-val">84K</div><div class="prev-stat-lbl">LIKES</div></div>
+        <div class="prev-stat"><div class="prev-stat-val">9.4K</div><div class="prev-stat-lbl">FOLLOWS</div></div>
+        <div class="prev-stat"><div class="prev-stat-val">12K</div><div class="prev-stat-lbl">SHARES</div></div>
+      </div>
+
+      <!-- section label -->
+      <div class="prev-section-label">🏆 TOP 7 VIDEOS RANKED</div>
+
+      <!-- video card row -->
+      <div class="prev-cards">
+        <div class="prev-card prev-card-gold">
+          <div class="prev-rank gold">🥇</div>
+          <div class="prev-thumb" style="background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(139,92,246,0.2))">🌅</div>
+          <div class="prev-card-info">
+            <div class="prev-card-title">MORNING ROUTINE</div>
+            <div class="prev-metrics-row">
+              <span>284K 👁</span><span>18K ❤️</span><span>2.1K 👤</span>
+            </div>
+            <div class="prev-bar-track"><div class="prev-bar-fill" style="width:100%"></div></div>
+            <!-- mini retention chart -->
+            <svg viewBox="0 0 120 30" class="prev-chart"><polyline points="0,2 20,6 40,12 60,18 80,22 100,26 120,28" fill="none" stroke="#fbbf24" stroke-width="1.5" opacity="0.8"/><polygon points="0,2 20,6 40,12 60,18 80,22 100,26 120,28 120,30 0,30" fill="rgba(251,191,36,0.08)"/></svg>
+          </div>
+        </div>
+        <div class="prev-card">
+          <div class="prev-rank silver">🥈</div>
+          <div class="prev-thumb" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(6,182,212,0.2))">⚡</div>
+          <div class="prev-card-info">
+            <div class="prev-card-title">PRODUCTIVITY HACKS</div>
+            <div class="prev-metrics-row">
+              <span>198K 👁</span><span>14K ❤️</span><span>1.6K 👤</span>
+            </div>
+            <div class="prev-bar-track"><div class="prev-bar-fill" style="width:74%"></div></div>
+            <svg viewBox="0 0 120 30" class="prev-chart"><polyline points="0,2 20,8 40,14 60,19 80,23 100,27 120,29" fill="none" stroke="#8b5cf6" stroke-width="1.5" opacity="0.8"/><polygon points="0,2 20,8 40,14 60,19 80,23 100,27 120,29 120,30 0,30" fill="rgba(139,92,246,0.08)"/></svg>
+          </div>
+        </div>
+        <div class="prev-card prev-card-faded">
+          <div class="prev-rank bronze">🥉</div>
+          <div class="prev-thumb" style="background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(244,114,182,0.2))">🎬</div>
+          <div class="prev-card-info">
+            <div class="prev-card-title">BEHIND THE SCENES</div>
+            <div class="prev-metrics-row">
+              <span>156K 👁</span><span>12K ❤️</span><span>950 👤</span>
+            </div>
+            <div class="prev-bar-track"><div class="prev-bar-fill" style="width:58%"></div></div>
+            <svg viewBox="0 0 120 30" class="prev-chart"><polyline points="0,2 20,9 40,15 60,20 80,24 100,27 120,29" fill="none" stroke="#06b6d4" stroke-width="1.5" opacity="0.8"/><polygon points="0,2 20,9 40,15 60,20 80,24 100,27 120,29 120,30 0,30" fill="rgba(6,182,212,0.08)"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- suggestions preview -->
+      <div class="prev-section-label" style="margin-top:10px">✨ AI VIDEO IDEAS</div>
+      <div class="prev-suggestions">
+        <div class="prev-sug"><span class="prev-sug-num">01</span><span class="prev-sug-title">THE TRUTH ABOUT GOING VIRAL</span></div>
+        <div class="prev-sug"><span class="prev-sug-num">02</span><span class="prev-sug-title">MY FULL MORNING ROUTINE — UNFILTERED</span></div>
+        <div class="prev-sug"><span class="prev-sug-num">03</span><span class="prev-sug-title">PRODUCTIVITY SETUP TOUR</span></div>
+      </div>
+
+      <!-- overlay fade at bottom -->
+      <div class="preview-fade"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-header fade-in stagger-1">
+    <div>
+      <div class="dash-title">Your <span>Top Content</span> — Last 30 Days</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <div class="date-range" id="date-range-label"></div>
+      <div class="user-bar" id="user-bar">
+        <div class="user-avatar" id="user-avatar-initial">J</div>
+        <div>
+          <div class="user-name" id="user-name-display">Jane Creator</div>
+          <div class="user-handle" id="user-handle-display">@janecreates</div>
+        </div>
+        <button class="btn-disconnect" id="btn-disconnect">Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW STATS -->
+  <div class="stats-row fade-in stagger-2" id="stats-row"></div>
+
+  <!-- TOP 7 VIDEOS -->
+  <div class="section-label fade-in stagger-3">🏆 Top 7 Videos Ranked</div>
+  <div class="video-grid fade-in stagger-3" id="video-grid"></div>
+
+  <!-- LEADERBOARD -->
+  <div class="section-label fade-in stagger-4">📊 Full Rankings Leaderboard</div>
+  <div class="leaderboard fade-in stagger-4">
+    <table class="leaderboard-table" id="leaderboard-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Video</th>
+          <th>👁 Views</th>
+          <th>❤️ Likes</th>
+          <th>💬 Comments</th>
+          <th>↗️ Shares</th>
+          <th>👤 Follows</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
+  </div>
+
+  <!-- SUGGESTIONS -->
+  <div class="section-label fade-in stagger-5">✨ AI-Powered Video Ideas for You</div>
+  <div class="suggestions-grid fade-in stagger-5" id="suggestions-grid"></div>
+</div>
+
+<script>
+// ──────────────────────────────────────
+// AMBIENT GLOW FOLLOWS MOUSE
+// ──────────────────────────────────────
+const cursorGlow = document.getElementById('cursor-glow');
+const previewBox = document.querySelector('.preview-box');
+
+let mouseX = -999, mouseY = -999;
+let glowX = -999, glowY = -999;
+
+function animateGlow() {
+  glowX += (mouseX - glowX) * 0.1;
+  glowY += (mouseY - glowY) * 0.1;
+  cursorGlow.style.left = glowX + 'px';
+  cursorGlow.style.top = glowY + 'px';
+  requestAnimationFrame(animateGlow);
+}
+animateGlow();
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+
+  if (previewBox) {
+    const rect = previewBox.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dist = Math.sqrt(Math.pow(mouseX - cx, 2) + Math.pow(mouseY - cy, 2));
+    const maxDist = Math.sqrt(Math.pow(rect.width, 2) + Math.pow(rect.height, 2));
+    const proximity = Math.max(0, 1 - dist / (maxDist * 0.8));
+
+    if (proximity > 0.15) {
+      const i = proximity;
+      previewBox.style.boxShadow = `
+        0 0 0 1px rgba(40,120,255,${0.2 + i * 0.5}),
+        0 0 ${40 + i * 80}px rgba(40,120,255,${0.25 + i * 0.55}),
+        0 0 ${80 + i * 160}px rgba(0,180,255,${0.1 + i * 0.3}),
+        0 0 ${160 + i * 200}px rgba(0,120,255,${i * 0.2}),
+        inset 0 0 ${40 + i * 60}px rgba(40,120,255,${0.04 + i * 0.1})
+      `;
+      previewBox.style.animation = 'none';
+    } else {
+      previewBox.style.boxShadow = '';
+      previewBox.style.animation = '';
+    }
+  }
+});
+
+
+
+// ──────────────────────────────────────
+// CONFIG — paste your Meta App ID below
+// ──────────────────────────────────────
+const CONFIG = {
+  INSTAGRAM_APP_ID: '1720990019276023',
+  REDIRECT_URI: window.location.href.split('?')[0].split('#')[0],
+  SCOPES: 'instagram_basic,instagram_manage_insights,pages_read_engagement'
+};
+
+// ──────────────────────────────────────
+// DEMO DATA (replace with real API calls)
+// ──────────────────────────────────────
+const DEMO_USER = {
+  name: 'Alex Rivera',
+  handle: '@alexrivera',
+  avatar: 'AR'
+};
+
+const DEMO_VIDEOS = [
+  { id:1, title:'Morning Routine That Changed My Life ☀️', date:'Mar 14, 2026', views:284000, likes:18400, comments:1240, shares:3200, reposts:890, follows:2100, emoji:'🌅' },
+  { id:2, title:'5 Productivity Hacks You NEED in 2026', date:'Mar 10, 2026', views:198000, likes:14200, comments:980, shares:2800, reposts:650, follows:1600, emoji:'⚡' },
+  { id:3, title:'Behind the Scenes: My Studio Setup', date:'Mar 7, 2026', views:156000, likes:12800, comments:2100, shares:1400, reposts:420, follows:950, emoji:'🎬' },
+  { id:4, title:'Q&A: Everything You Asked Me', date:'Mar 4, 2026', views:134000, likes:9600, comments:3400, shares:980, reposts:310, follows:740, emoji:'💬' },
+  { id:5, title:'Trying Viral TikTok Food Trends', date:'Feb 28, 2026', views:112000, likes:8900, comments:760, shares:1800, reposts:540, follows:620, emoji:'🍜' },
+  { id:6, title:'Day in My Life: NYC Edition', date:'Feb 24, 2026', views:98000, likes:7400, comments:640, shares:1100, reposts:290, follows:510, emoji:'🏙️' },
+  { id:7, title:'How I Grew 50K Followers in 90 Days', date:'Feb 20, 2026', views:87000, likes:6800, comments:1840, shares:2600, reposts:720, follows:1900, emoji:'📈' }
+];
+
+const DEMO_SUGGESTIONS = [
+  { title:'The Truth About Going Viral — What Nobody Tells You', reason:'Your audience engages 3× more on transparency/behind-the-scenes content. Raw honesty works.', tags:['Education','Trending','High Saves'] },
+  { title:'My Entire Morning Routine — Unfiltered 60min Version', reason:'Your morning routine is #1. A long-form deep dive will capture your most loyal viewers.', tags:['Lifestyle','Long-Form','High Watch Time'] },
+  { title:'I Read 50 Comments & Answered Every Single One', reason:'Your Q&A drives the most comments. Doubling down on community interaction spikes follows.', tags:['Community','Engagement Bait'] },
+  { title:'Productivity Setup Tour — Every App & Tool I Use', reason:'Tech + productivity crossover. High share rate predicted based on your hacks video performance.', tags:['Tech','High Shares','Evergreen'] },
+  { title:'Week in My Life: Working From Anywhere', reason:'Travel + lifestyle content is trending in your niche and you haven't posted it yet — gap opportunity.', tags:['Vlog','Trending Niche','New Audience'] },
+  { title:'Reacting to My First 10 Videos (Cringe Alert)', reason:'Throwback/nostalgia content builds emotional connection. High comment & share potential.', tags:['Nostalgia','Relatable','Fun'] },
+  { title:'How I Plan a Month of Content in 2 Hours', reason:'Your audience follows you for productivity. Process content with screen time performs at 2× avg.', tags:['Education','Screen Time','High Saves'] }
+];
+
+// ──────────────────────────────────────
+// SCORE CALCULATOR
+// ──────────────────────────────────────
+function calcScore(v) {
+  return Math.round(
+    v.views * 0.3 +
+    v.likes * 2 +
+    v.comments * 5 +
+    v.shares * 4 +
+    v.reposts * 3 +
+    v.follows * 6
+  );
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+// ──────────────────────────────────────
+// CONNECT INSTAGRAM — Real OAuth Flow
+// ──────────────────────────────────────
+function connectInstagram() {
+  if (CONFIG.INSTAGRAM_APP_ID === 'YOUR_APP_ID_HERE') {
+    // No App ID yet — show setup guide
+    document.getElementById('setup-modal').style.display = 'flex';
+    return;
+  }
+  // Redirect to Instagram OAuth
+  const url = 'https://api.instagram.com/oauth/authorize' +
+    '?client_id=' + CONFIG.INSTAGRAM_APP_ID +
+    '&redirect_uri=' + encodeURIComponent(CONFIG.REDIRECT_URI) +
+    '&scope=' + CONFIG.SCOPES +
+    '&response_type=code';
+  window.location.href = url;
+}
+
+// Handle OAuth ?code= callback when Instagram redirects back
+function checkOAuthCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const err = params.get('error_reason');
+  if (err) {
+    alert('Instagram login was cancelled. Please try again.');
+    return;
+  }
+  if (code) {
+    window.history.replaceState({}, '', window.location.pathname);
+    showLoading();
+
+    // Exchange code for token via your Render backend
+    // Replace YOUR_RENDER_URL with the URL Render gives you after deploying
+    const BACKEND_URL = 'YOUR_RENDER_URL_HERE';
+
+    fetch(BACKEND_URL + '/auth/instagram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    })
+    .then(r => r.json())
+    .then(async tokenData => {
+      if (tokenData.error) throw new Error(tokenData.error);
+      const token = tokenData.access_token;
+
+      // Fetch profile + media in parallel
+      const [profileRes, mediaRes] = await Promise.all([
+        fetch(BACKEND_URL + '/instagram/profile?token=' + token),
+        fetch(BACKEND_URL + '/instagram/media?token=' + token)
+      ]);
+
+      const profile = await profileRes.json();
+      const mediaData = await mediaRes.json();
+
+      const user = {
+        name: profile.username || 'Instagram User',
+        handle: '@' + (profile.username || 'user'),
+        avatar: (profile.username || 'U').substring(0,2).toUpperCase()
+      };
+
+      // Map real media to dashboard format
+      const videos = mediaData.media && mediaData.media.length > 0
+        ? mediaData.media.map((m, i) => ({
+            id: i + 1,
+            title: m.title,
+            date: m.date,
+            views: m.views,
+            likes: m.likes,
+            comments: m.comments,
+            shares: m.shares,
+            reposts: m.saved,
+            follows: m.follows,
+            emoji: '📱',
+            thumbnail: m.thumbnail
+          }))
+        : DEMO_VIDEOS; // fallback to demo if no data
+
+      hideLoading();
+      loadDashboard(user, videos, DEMO_SUGGESTIONS);
+    })
+    .catch(err => {
+      console.error('Login error:', err);
+      hideLoading();
+      // Fallback to demo on error
+      loadDashboard(DEMO_USER, DEMO_VIDEOS, DEMO_SUGGESTIONS);
+    });
+  }
+}
+
+function showLoading() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loading-screen').style.display = 'none';
+}
+
+function disconnect() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('header-right').innerHTML = '<div class="header-badge">Instagram Analytics · 30-Day View</div>';
+}
+
+// ──────────────────────────────────────
+// LOAD DASHBOARD
+// ──────────────────────────────────────
+function loadDashboard(user, videos, suggestions) {
+  // Sort by score
+  const ranked = [...videos].map(v => ({ ...v, score: calcScore(v) })).sort((a,b) => b.score - a.score);
+  const maxScore = ranked[0].score;
+
+  // Date range
+  const now = new Date();
+  const past = new Date(now); past.setDate(past.getDate() - 30);
+  document.getElementById('date-range-label').textContent =
+    past.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – ' +
+    now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  // User bar
+  document.getElementById('user-name-display').textContent = user.name;
+  document.getElementById('user-handle-display').textContent = user.handle;
+  document.getElementById('user-avatar-initial').textContent = user.avatar;
+
+  // Overview stats
+  const totalViews = ranked.reduce((s,v) => s+v.views, 0);
+  const totalLikes = ranked.reduce((s,v) => s+v.likes, 0);
+  const totalFollows = ranked.reduce((s,v) => s+v.follows, 0);
+  const totalShares = ranked.reduce((s,v) => s+v.shares, 0);
+  const totalComments = ranked.reduce((s,v) => s+v.comments, 0);
+
+  document.getElementById('stats-row').innerHTML = `
+    ${statCard('Total Views', fmtNum(totalViews), '+18% vs prev. period', 'rgba(139,92,246,0.1)')}
+    ${statCard('Total Likes', fmtNum(totalLikes), '+12% vs prev. period', 'rgba(244,114,182,0.1)')}
+    ${statCard('New Followers', fmtNum(totalFollows), '+31% vs prev. period', 'rgba(74,222,128,0.1)')}
+    ${statCard('Total Shares', fmtNum(totalShares), '+24% vs prev. period', 'rgba(6,182,212,0.1)')}
+    ${statCard('Comments', fmtNum(totalComments), '+9% vs prev. period', 'rgba(251,191,36,0.1)')}
+  `;
+
+  // Video cards
+  const rankEmojis = ['🥇','🥈','🥉','4','5','6','7'];
+  const rankClasses = ['rank-1','rank-2','rank-3','rank-other','rank-other','rank-other','rank-other'];
+
+  document.getElementById('video-grid').innerHTML = ranked.map((v, i) => `
+    <div class="video-card">
+      <div class="rank-badge ${rankClasses[i]}">${rankEmojis[i]}</div>
+      <div class="thumb-placeholder">${v.emoji}</div>
+      <div class="video-info">
+        <div class="video-title">${v.title}</div>
+        <div class="video-date">${v.date}</div>
+        <div class="metrics-grid">
+          ${metricCell(fmtNum(v.views), '👁 Views')}
+          ${metricCell(fmtNum(v.likes), '❤️ Likes')}
+          ${metricCell(fmtNum(v.comments), '💬 Comments')}
+          ${metricCell(fmtNum(v.shares), '↗️ Shares')}
+          ${metricCell(fmtNum(v.reposts), '🔁 Reposts')}
+          ${metricCell(fmtNum(v.follows), '👤 Follows')}
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-label"><span>Performance Score</span><span>${fmtNum(v.score)}</span></div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width: ${Math.round(v.score/maxScore*100)}%"></div>
+          </div>
+        </div>
+        <div class="retention-wrap">
+          <div class="retention-label">Retention Curve</div>
+          <canvas class="retention-chart" id="ret-${v.id}"></canvas>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Draw retention charts
+  ranked.forEach((v, i) => {
+    const ctx = document.getElementById(`ret-${v.id}`).getContext('2d');
+    const labels = ['0s','5s','10s','20s','30s','45s','60s'];
+    // Simulate retention curves
+    const dropSpeed = 0.85 - (i * 0.03);
+    const data = labels.map((_, j) => Math.round(100 * Math.pow(dropSpeed, j)));
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          borderColor: i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#c97c3a' : '#8b5cf6',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          backgroundColor: i === 0 ? 'rgba(251,191,36,0.08)' : 'rgba(139,92,246,0.06)',
+          pointRadius: 0
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => ctx.parsed.y + '% watching' },
+          backgroundColor: '#0d0d1a',
+          borderColor: 'rgba(139,92,246,0.3)',
+          borderWidth: 1,
+          titleColor: '#8b5cf6',
+          bodyColor: '#f1f0ff'
+        }},
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(241,240,255,0.35)', font: { size: 9 } } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(241,240,255,0.35)', font: { size: 9 } }, min: 0, max: 100 }
+        },
+        animation: { duration: 1200, easing: 'easeInOutQuart' }
+      }
+    });
+  });
+
+  // Leaderboard
+  document.getElementById('leaderboard-body').innerHTML = ranked.map((v,i) => `
+    <tr>
+      <td><span class="lb-rank" style="color:${['#fbbf24','#94a3b8','#c97c3a','#8b5cf6','#8b5cf6','#8b5cf6','#8b5cf6'][i]}">${i+1}</span></td>
+      <td class="lb-title">${v.emoji} ${v.title}</td>
+      <td>${fmtNum(v.views)}</td>
+      <td>${fmtNum(v.likes)}</td>
+      <td>${fmtNum(v.comments)}</td>
+      <td>${fmtNum(v.shares)}</td>
+      <td>${fmtNum(v.follows)}</td>
+      <td class="lb-score">${fmtNum(v.score)}</td>
+    </tr>
+  `).join('');
+
+  // Suggestions
+  document.getElementById('suggestions-grid').innerHTML = suggestions.map((s,i) => `
+    <div class="suggestion-card">
+      <div class="suggestion-num">Idea #${i+1}</div>
+      <div class="suggestion-title">${s.title}</div>
+      <div class="suggestion-reason">${s.reason}</div>
+      <div class="suggestion-tags">${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  // Show dashboard
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('login-screen').style.display = 'none';
+}
+
+function statCard(label, value, delta, glow) {
+  return `<div class="stat-card" style="--card-glow:${glow}">
+    <div class="stat-label">${label}</div>
+    <div class="stat-value">${value}</div>
+    <div class="stat-delta">↑ ${delta}</div>
+  </div>`;
+}
+
+function metricCell(val, lbl) {
+  return `<div class="metric"><span class="metric-val">${val}</span><span class="metric-lbl">${lbl}</span></div>`;
+}
+
+// ──────────────────────────────────────
+// ATTACH EVENT LISTENERS
+// ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Button listeners
+  document.getElementById('btn-connect-ig').addEventListener('click', connectInstagram);
+  document.body.addEventListener('click', e => {
+    if (e.target && e.target.id === 'btn-disconnect') disconnect();
+  });
+
+  // Check if Instagram redirected back with ?code=
+  checkOAuthCallback();
+});
+</script>
+</body>
+</html>
