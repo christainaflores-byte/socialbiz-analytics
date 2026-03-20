@@ -1,0 +1,14 @@
+{
+  "name": "socialbiz-analytics-server",
+  "version": "1.0.0",
+  "description": "Instagram OAuth backend for SocialBiz Analytics",
+  "main": "socialbiz-server.js",
+  "scripts": {
+    "start": "node socialbiz-server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  }
+}
