@@ -801,7 +801,7 @@
           We only read your analytics to display them to you. We never store, sell, or share your data. Read-only access, always.
         </div>
       </div>
-      <button class="btn-connect" id="btn-connect-ig">
+      <button class="btn-connect" id="btn-connect-ig" onclick="connectInstagram()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="white" stroke-width="1.5"/><circle cx="17.5" cy="6.5" r="1" fill="white"/></svg>
         Connect Instagram
       </button>
@@ -989,9 +989,9 @@ document.addEventListener('mousemove', e => {
 // CONFIG — paste your Meta App ID below
 // ──────────────────────────────────────
 const CONFIG = {
-  INSTAGRAM_APP_ID: '1720990019276023',
-  REDIRECT_URI: window.location.href.split('?')[0].split('#')[0],
-  SCOPES: 'instagram_basic,instagram_manage_insights,pages_read_engagement'
+  INSTAGRAM_APP_ID: '1446860213785626',
+  REDIRECT_URI: 'https://symphonious-boba-b7f947.netlify.app',
+  SCOPES: 'instagram_basic,pages_read_engagement,pages_show_list,business_management'
 };
 
 // ──────────────────────────────────────
@@ -1018,7 +1018,7 @@ const DEMO_SUGGESTIONS = [
   { title:'My Entire Morning Routine — Unfiltered 60min Version', reason:'Your morning routine is #1. A long-form deep dive will capture your most loyal viewers.', tags:['Lifestyle','Long-Form','High Watch Time'] },
   { title:'I Read 50 Comments & Answered Every Single One', reason:'Your Q&A drives the most comments. Doubling down on community interaction spikes follows.', tags:['Community','Engagement Bait'] },
   { title:'Productivity Setup Tour — Every App & Tool I Use', reason:'Tech + productivity crossover. High share rate predicted based on your hacks video performance.', tags:['Tech','High Shares','Evergreen'] },
-  { title:'Week in My Life: Working From Anywhere', reason:'Travel + lifestyle content is trending in your niche and you haven't posted it yet — gap opportunity.', tags:['Vlog','Trending Niche','New Audience'] },
+  { title:'Week in My Life: Working From Anywhere', reason:"Travel + lifestyle content is trending in your niche and you have not posted it yet - gap opportunity.", tags:['Vlog','Trending Niche','New Audience'] },
   { title:'Reacting to My First 10 Videos (Cringe Alert)', reason:'Throwback/nostalgia content builds emotional connection. High comment & share potential.', tags:['Nostalgia','Relatable','Fun'] },
   { title:'How I Plan a Month of Content in 2 Hours', reason:'Your audience follows you for productivity. Process content with screen time performs at 2× avg.', tags:['Education','Screen Time','High Saves'] }
 ];
@@ -1044,16 +1044,13 @@ function fmtNum(n) {
 }
 
 // ──────────────────────────────────────
-// CONNECT INSTAGRAM — Real OAuth Flow
+// CONNECT INSTAGRAM — Popup Login
 // ──────────────────────────────────────
-function connectInstagram() {
-  if (CONFIG.INSTAGRAM_APP_ID === 'YOUR_APP_ID_HERE') {
-    // No App ID yet — show setup guide
-    document.getElementById('setup-modal').style.display = 'flex';
-    return;
-  }
-  // Redirect to Instagram OAuth
-  const url = 'https://api.instagram.com/oauth/authorize' +
+const BACKEND_URL = 'https://socialbiz-analytics.onrender.com';
+let authPopup = null;
+
+window.connectInstagram = function() {
+  const url = 'https://www.facebook.com/dialog/oauth' +
     '?client_id=' + CONFIG.INSTAGRAM_APP_ID +
     '&redirect_uri=' + encodeURIComponent(CONFIG.REDIRECT_URI) +
     '&scope=' + CONFIG.SCOPES +
@@ -1061,74 +1058,65 @@ function connectInstagram() {
   window.location.href = url;
 }
 
-// Handle OAuth ?code= callback when Instagram redirects back
+function handleAuthCode(code) {
+  fetch(BACKEND_URL + '/auth/instagram', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  })
+  .then(r => r.json())
+  .then(async tokenData => {
+    if (tokenData.error) throw new Error(tokenData.error);
+    const token = tokenData.access_token;
+
+    const [profileRes, mediaRes] = await Promise.all([
+      fetch(BACKEND_URL + '/instagram/profile?token=' + token),
+      fetch(BACKEND_URL + '/instagram/media?token=' + token)
+    ]);
+
+    const profile = await profileRes.json();
+    const mediaData = await mediaRes.json();
+
+    const user = {
+      name: profile.username || 'Instagram User',
+      handle: '@' + (profile.username || 'user'),
+      avatar: (profile.username || 'U').substring(0,2).toUpperCase()
+    };
+
+    const videos = mediaData.media && mediaData.media.length > 0
+      ? mediaData.media.map((m, i) => ({
+          id: i + 1,
+          title: m.title,
+          date: m.date,
+          views: m.views,
+          likes: m.likes,
+          comments: m.comments,
+          shares: m.shares,
+          reposts: m.saved,
+          follows: m.follows,
+          emoji: '📱',
+          thumbnail: m.thumbnail
+        }))
+      : DEMO_VIDEOS;
+
+    hideLoading();
+    loadDashboard(user, videos, DEMO_SUGGESTIONS);
+  })
+  .catch(err => {
+    console.error('Login error:', err);
+    hideLoading();
+    loadDashboard(DEMO_USER, DEMO_VIDEOS, DEMO_SUGGESTIONS);
+  });
+}
+
+// Handle OAuth ?code= callback if page reloads instead of popup
 function checkOAuthCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
-  const err = params.get('error_reason');
-  if (err) {
-    alert('Instagram login was cancelled. Please try again.');
-    return;
-  }
   if (code) {
     window.history.replaceState({}, '', window.location.pathname);
     showLoading();
-
-    // Exchange code for token via your Render backend
-    // Replace YOUR_RENDER_URL with the URL Render gives you after deploying
-    const BACKEND_URL = 'YOUR_RENDER_URL_HERE';
-
-    fetch(BACKEND_URL + '/auth/instagram', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    })
-    .then(r => r.json())
-    .then(async tokenData => {
-      if (tokenData.error) throw new Error(tokenData.error);
-      const token = tokenData.access_token;
-
-      // Fetch profile + media in parallel
-      const [profileRes, mediaRes] = await Promise.all([
-        fetch(BACKEND_URL + '/instagram/profile?token=' + token),
-        fetch(BACKEND_URL + '/instagram/media?token=' + token)
-      ]);
-
-      const profile = await profileRes.json();
-      const mediaData = await mediaRes.json();
-
-      const user = {
-        name: profile.username || 'Instagram User',
-        handle: '@' + (profile.username || 'user'),
-        avatar: (profile.username || 'U').substring(0,2).toUpperCase()
-      };
-
-      // Map real media to dashboard format
-      const videos = mediaData.media && mediaData.media.length > 0
-        ? mediaData.media.map((m, i) => ({
-            id: i + 1,
-            title: m.title,
-            date: m.date,
-            views: m.views,
-            likes: m.likes,
-            comments: m.comments,
-            shares: m.shares,
-            reposts: m.saved,
-            follows: m.follows,
-            emoji: '📱',
-            thumbnail: m.thumbnail
-          }))
-        : DEMO_VIDEOS; // fallback to demo if no data
-
-      hideLoading();
-      loadDashboard(user, videos, DEMO_SUGGESTIONS);
-    })
-    .catch(err => {
-      console.error('Login error:', err);
-      hideLoading();
-      // Fallback to demo on error
-      loadDashboard(DEMO_USER, DEMO_VIDEOS, DEMO_SUGGESTIONS);
-    });
+    handleAuthCode(code);
   }
 }
 
@@ -1299,16 +1287,24 @@ function metricCell(val, lbl) {
 // ──────────────────────────────────────
 // ATTACH EVENT LISTENERS
 // ──────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  // Button listeners
-  document.getElementById('btn-connect-ig').addEventListener('click', connectInstagram);
+function init() {
+  const btn = document.getElementById('btn-connect-ig');
+  if (btn) {
+    btn.onclick = connectInstagram;
+  } else {
+    setTimeout(init, 100);
+  }
   document.body.addEventListener('click', e => {
     if (e.target && e.target.id === 'btn-disconnect') disconnect();
   });
-
-  // Check if Instagram redirected back with ?code=
   checkOAuthCallback();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 </body>
 </html>
